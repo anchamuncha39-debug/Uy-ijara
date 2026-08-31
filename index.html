@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UyTop Uz</title>
+    <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
@@ -17,7 +18,7 @@
             background-color: #f4f6f8;
             color: #333;
             padding: 12px;
-            padding-bottom: 80px;
+            padding-bottom: 90px;
         }
 
         .header {
@@ -91,6 +92,7 @@
             font-weight: bold;
             font-size: 14px;
             cursor: pointer;
+            text-decoration: none;
         }
 
         .add-btn {
@@ -150,10 +152,12 @@
         <input type="text" id="searchInput" onkeyup="filterListings()" placeholder="🔍 Tuman yoki xonalar soni bo'yicha qidiruv...">
     </div>
 
+    <!-- E'lonlar Ro'yxati -->
     <div id="listings"></div>
 
     <button class="btn add-btn" onclick="openModal()">➕ Yangi e'lon qo'shish</button>
 
+    <!-- Modal Forma -->
     <div class="modal" id="addModal">
         <div class="modal-content">
             <h3>Yangi e'lon yaratish</h3>
@@ -161,7 +165,7 @@
             <input type="text" id="price" placeholder="Narxi (masalan: 200$ / oy)">
             <input type="text" id="location" placeholder="Manzil (masalan: Markaz)">
             <input type="text" id="phone" placeholder="Tel raqam (+998...)">
-            <input type="text" id="imgUrl" placeholder="Rasm havolasi (URL)">
+            <input type="text" id="imgUrl" placeholder="Rasm havolasi (ixtiyoriy)">
             <button class="btn" onclick="addNewListing()">E'lonni joylash</button>
             <button class="btn close-btn" onclick="closeModal()">Yopish</button>
         </div>
@@ -171,11 +175,14 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Boshlang'ich e'lonlar bazasi
-        let houses = [
+        // Boshlang'ich namuna e'lonlar
+        const defaultHouses = [
             { title: "2 xonali kvartira, sharoiti bor", price: "250$ / oy", location: "Markaz, Universitet atrofi", phone: "+998901234567", img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500" },
             { title: "3 xonali hovli uy", price: "180$ / oy", location: "Tinchlik tumani", phone: "+998909876543", img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500" }
         ];
+
+        // Telefon xotirasidan o'qish (LocalStorage)
+        let houses = JSON.parse(localStorage.getItem('my_real_estate_list')) || defaultHouses;
 
         function renderListings(data) {
             let container = document.getElementById('listings');
@@ -188,7 +195,7 @@
                             <div class="card-title">${item.title}</div>
                             <div class="card-price">💵 ${item.price}</div>
                             <div class="card-location">📍 ${item.location}</div>
-                            <button class="btn" onclick="alert('Bog\\'lanish uchun raqam: ${item.phone}')">📞 Bog'lanish</button>
+                            <a href="tel:${item.phone}" class="btn">📞 Bog'lanish (${item.phone})</a>
                         </div>
                     </div>
                 `;
@@ -211,12 +218,14 @@
             let phone = document.getElementById('phone').value;
             let img = document.getElementById('imgUrl').value || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=500';
 
-            if(!title || !price) {
-                alert("Iltimos, sarlavha va narxni kiriting!");
+            if(!title || !price || !phone) {
+                alert("Iltimos, sarlavha, narx va telefon raqamni kiriting!");
                 return;
             }
 
             houses.unshift({ title, price, location, phone, img });
+            localStorage.setItem('my_real_estate_list', JSON.stringify(houses));
+
             renderListings(houses);
             closeModal();
 
@@ -228,8 +237,9 @@
             document.getElementById('imgUrl').value = '';
         }
 
-        // Ilk bor yuklanganda ekranga chiqarish
+        // Yuklanganda ekranga chiqarish
         renderListings(houses);
     </script>
 </body>
 </html>
+     
