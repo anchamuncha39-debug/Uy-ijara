@@ -28,7 +28,7 @@
     <button class="tab-btn" onclick="showTab('add')">➕ E'lon Berish</button>
   </div>
 
-  <!-- 1-BO'LIM: E'LONLAR RO'YXATI VA FILTR -->
+
   <div id="tab-list">
     <div class="card">
       <h3>🔍 Qidiruv va Filtr</h3>
@@ -56,8 +56,7 @@
       <p style="text-align: center;">E'lonlar yuklanmoqda...</p>
     </div>
   </div>
-
-  <!-- 2-BO'LIM: E'LON QO'SHISH -->
+  
   <div id="tab-add" class="hidden">
     <div class="card">
       <h3>✍️ Yangi E'lon Joylash</h3>
@@ -102,19 +101,19 @@
   </div>
 
   <script>
-    // 1. ADMIN TELEGRAM ID RAQAMINGIZNI SHU YERGA YOZING:
+    
     const ADMIN_TELEGRAM_ID = 5703210590; 
 
-    // Firebase sozlamalari (sintaksis xatoligi tuzatildi)
     const firebaseConfig = {
       apiKey: "AIzaSyClO-_iXU-eJWOHB3bzcuAdn7UqHk71oUI",
       authDomain: "surhondaryo-uy-ijara.firebaseapp.com",
+      databaseURL: "https://surhondaryo-uy-ijara-default-rtdb.firebaseio.com",
       projectId: "surhondaryo-uy-ijara",
       storageBucket: "surhondaryo-uy-ijara.firebasestorage.app",
       messagingSenderId: "551178863813",
       appId: "1:5511788633:web:16daab123488a8d4325cac",
       measurementId: "G-4SJC1H62SK"
-    } };
+     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
@@ -122,7 +121,6 @@
     const currentUserId = tg?.initDataUnsafe?.user?.id;
     if(tg) tg.expand();
 
-    // 2. TAQIQLANGAN VA ALOQASIZ SO'ZLAR FILTRI
     const forbiddenWords = [
       'qizlar', 'sex', 'seks', 'porn', 'onlain', 'masaj', 
       'qutoq', 'jalab', 'moshena', 'obuna buling', 'obuna',
@@ -147,7 +145,6 @@
       document.getElementById('vip-payment-info').classList.toggle('hidden', !isVip);
     }
 
-    // 3. E'LONNI FILTRLAB VA BIR ZUMDA YUBORISH
     function submitListing() {
       const title = document.getElementById('title').value;
       const region = document.getElementById('region').value;
@@ -158,7 +155,6 @@
       const img = document.getElementById('img-url').value || 'https://via.placeholder.com/300x180?text=Rasm+Yo%27q';
       const isVip = document.getElementById('is-vip').value === 'true';
 
-      // Taqiqlangan so'zlarga tekshirish
       const textToCheck = (title + " " + desc).toLowerCase();
       const hasForbidden = forbiddenWords.some(word => textToCheck.includes(word));
 
@@ -175,7 +171,7 @@
       const newRef = db.ref('listings').push();
       newRef.set({
         title, region, type, price, phone, desc, img, isVip,
-        status: 'approved', // Moderatsiyasiz darhol ilovaga chiqadi
+        status: 'approved', 
         createdAt: Date.now(),
         userId: currentUserId || 'anonim'
       }).then(() => {
@@ -189,7 +185,6 @@
       });
     }
 
-    // 4. E'LONLARNI YUKLASH VA ADMIN UCHUN O'CHIRISH TUGMASI
     function loadListings(regionFilter = 'all', typeFilter = 'all') {
       db.ref('listings').on('value', snapshot => {
         const container = document.getElementById('listings-container');
@@ -208,7 +203,6 @@
             if (regionFilter !== 'all' && item.region !== regionFilter) return;
             if (typeFilter !== 'all' && item.type !== typeFilter) return;
 
-            // Admin o'chirish tugmasi (faqat sizning ID raqamingizga ko'rinadi)
             let deleteBtn = '';
             if (currentUserId && Number(currentUserId) === ADMIN_TELEGRAM_ID) {
               deleteBtn = `<button onclick="deleteListing('${key}')" style="background:#e53935; margin-top:8px;">🗑️ E'lonni o'chirish (Admin)</button>`;
@@ -232,7 +226,7 @@
       });
     }
 
-    // 5. ADMIN UCHUN E'LONNI BAZADAN O'CHIRISH
+    
     function deleteListing(key) {
       if (confirm("Haqiqatan ham ushbu e'lonni o'chirmoqchimisiz?")) {
         db.ref('listings/' + key).remove()
