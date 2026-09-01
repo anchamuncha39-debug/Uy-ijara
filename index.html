@@ -1,245 +1,106 @@
-   <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="uz">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UyTop Uz</title>
-    <!-- Telegram WebApp SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-
-        body {
-            background-color: #f4f6f8;
-            color: #333;
-            padding: 12px;
-            padding-bottom: 90px;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .header h2 {
-            font-size: 20px;
-            color: #2481cc;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 14px;
-            outline: none;
-        }
-
-        .card {
-            background: #fff;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            margin-bottom: 14px;
-        }
-
-        .card img {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-        }
-
-        .card-body {
-            padding: 12px;
-        }
-
-        .card-title {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 6px;
-        }
-
-        .card-price {
-            color: #2e7d32;
-            font-weight: bold;
-            font-size: 15px;
-            margin-bottom: 4px;
-        }
-
-        .card-location {
-            color: #666;
-            font-size: 13px;
-            margin-bottom: 10px;
-        }
-
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            background-color: #2481cc;
-            color: white;
-            text-align: center;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 14px;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        .add-btn {
-            position: fixed;
-            bottom: 16px;
-            right: 16px;
-            left: 16px;
-            background-color: #31b545;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        /* Modal (E'lon qo'shish oynasi) */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-        }
-
-        .modal-content h3 {
-            margin-bottom: 12px;
-            color: #2481cc;
-        }
-
-        .modal-content input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-        }
-
-        .close-btn {
-            background-color: #e53935;
-            margin-top: 6px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Surxondaryo Uy Ijara</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 15px; background: #f4f4f9; color: #333; }
+    .card { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .btn { background: #2481cc; color: #fff; border: none; padding: 10px 15px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; }
+    input, select, textarea { width: 100%; padding: 8px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+    .badge { background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+  </style>
 </head>
 <body>
 
-    <div class="header">
-        <h2>🏠 UyTop Uz</h2>
-    </div>
+  <h2>🏠 Surxondaryo Uy Ijara</h2>
+  
+  <!-- E'lon joylash formasi -->
+  <div class="card">
+    <h3>Yangi e'lon qo'shish</h3>
+    <input type="text" id="title" placeholder="Sarlavha (masalan: 2 xonali kvartira)">
+    <input type="number" id="price" placeholder="Narxi ($ yoki SO'M)">
+    <input type="text" id="phone" placeholder="Telefon raqam">
+    <textarea id="desc" placeholder="Tavsif (tuman, qavat, sharoitlar)"></textarea>
+    <button class="btn" onclick="addListing()">E'lonni yuborish</button>
+  </div>
 
-    <div class="search-box">
-        <input type="text" id="searchInput" onkeyup="filterListings()" placeholder="🔍 Tuman yoki xonalar soni bo'yicha qidiruv...">
-    </div>
+  <!-- E'lonlar ro'yxati -->
+  <h3>Mavjud E'lonlar</h3>
+  <div id="listings"></div>
 
-    <!-- E'lonlar Ro'yxati -->
-    <div id="listings"></div>
+  <script>
+    // 1. FIREBASE SOZLAMALARI (O'zingizning kalitlaringizni qo'ying)
+    const firebaseConfig = {
+      apiKey: "AIzaSyClO-_iXU-eJWOHB3bzcuAdn7UqHk71oUI",
+  authDomain: "surhondaryo-uy-ijara.firebaseapp.com",
+  projectId: "surhondaryo-uy-ijara",
+  storageBucket: "surhondaryo-uy-ijara.firebasestorage.app",
+  messagingSenderId: "551178863813",
+  appId: "1:551178863813:web:16daab123488a8d4325cac",
+  measurementId: "G-4SJC1H62SK"
+};
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    <button class="btn add-btn" onclick="openModal()">➕ Yangi e'lon qo'shish</button>
+    // Telegram WebApp obyektini faollashtirish
+    const tg = window.Telegram ? window.Telegram.WebApp : null;
+    if (tg) tg.expand();
 
-    <!-- Modal Forma -->
-    <div class="modal" id="addModal">
-        <div class="modal-content">
-            <h3>Yangi e'lon yaratish</h3>
-            <input type="text" id="title" placeholder="Sarlavha (masalan: 2 xonali kvartira)">
-            <input type="text" id="price" placeholder="Narxi (masalan: 200$ / oy)">
-            <input type="text" id="location" placeholder="Manzil (masalan: Markaz)">
-            <input type="text" id="phone" placeholder="Tel raqam (+998...)">
-            <input type="text" id="imgUrl" placeholder="Rasm havolasi (ixtiyoriy)">
-            <button class="btn" onclick="addNewListing()">E'lonni joylash</button>
-            <button class="btn close-btn" onclick="closeModal()">Yopish</button>
-        </div>
-    </div>
+    // 2. E'LON QO'SHISH VA MODERATSIYAGA YUBORISH
+    function addListing() {
+      const title = document.getElementById('title').value;
+      const price = document.getElementById('price').value;
+      const phone = document.getElementById('phone').value;
+      const desc = document.getElementById('desc').value;
 
-    <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
+      if (!title || !price || !phone) {
+        alert("Iltimos, barcha maydonlarni to'ldiring!");
+        return;
+      }
 
-        // Boshlang'ich namuna e'lonlar
-        const defaultHouses = [
-            { title: "2 xonali kvartira, sharoiti bor", price: "250$ / oy", location: "Markaz, Universitet atrofi", phone: "+998901234567", img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500" },
-            { title: "3 xonali hovli uy", price: "180$ / oy", location: "Tinchlik tumani", phone: "+998909876543", img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500" }
-        ];
+      // Bazaga status: "pending" (moderatsiya kutilmoqda) qilib saqlaymiz
+      const newRef = db.ref('listings').push();
+      newRef.set({
+title: title,
+        price: price,
+        phone: phone,
+        desc: desc,
+        status: 'pending',
+        createdAt: Date.now()
+      }).then(() => {
+        alert("E'loningiz moderator ko'rib chiqishi uchun yuborildi!");
+        document.getElementById('title').value = '';
+        document.getElementById('price').value = '';
+        document.getElementById('phone').value = '';
+        document.getElementById('desc').value = '';
+      });
+    }
 
-        // Telefon xotirasidan o'qish (LocalStorage)
-        let houses = JSON.parse(localStorage.getItem('my_real_estate_list')) || defaultHouses;
-
-        function renderListings(data) {
-            let container = document.getElementById('listings');
-            container.innerHTML = '';
-            data.forEach(item => {
-                container.innerHTML += `
-                    <div class="card">
-                        <img src="${item.img}" alt="Uy rasmi">
-                        <div class="card-body">
-                            <div class="card-title">${item.title}</div>
-                            <div class="card-price">💵 ${item.price}</div>
-                            <div class="card-location">📍 ${item.location}</div>
-                            <a href="tel:${item.phone}" class="btn">📞 Bog'lanish (${item.phone})</a>
-                        </div>
-                    </div>
-                `;
-            });
+    // 3. FAQAT TASDIQLANGAN (APPROVED) E'LONLARNI KO'RSATISH
+    db.ref('listings').on('value', (snapshot) => {
+      const container = document.getElementById('listings');
+      container.innerHTML = '';
+      const data = snapshot.val();
+      
+      for (let id in data) {
+        const item = data[id];
+        if (item.status === 'approved') {
+          container.innerHTML += `
+            <div class="card">
+              <span class="badge">Tasdiqlangan</span>
+              <h4>${item.title} - ${item.price}</h4>
+              <p>${item.desc}</p>
+              <p><b>Tel:</b> ${item.phone}</p>
+            </div>
+          `;
         }
-
-        function filterListings() {
-            let query = document.getElementById('searchInput').value.toLowerCase();
-            let filtered = houses.filter(h => h.title.toLowerCase().includes(query) || h.location.toLowerCase().includes(query));
-            renderListings(filtered);
-        }
-
-        function openModal() { document.getElementById('addModal').style.display = 'flex'; }
-        function closeModal() { document.getElementById('addModal').style.display = 'none'; }
-
-        function addNewListing() {
-            let title = document.getElementById('title').value;
-            let price = document.getElementById('price').value;
-            let location = document.getElementById('location').value;
-            let phone = document.getElementById('phone').value;
-            let img = document.getElementById('imgUrl').value || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=500';
-
-            if(!title || !price || !phone) {
-                alert("Iltimos, sarlavha, narx va telefon raqamni kiriting!");
-                return;
-            }
-
-            houses.unshift({ title, price, location, phone, img });
-            localStorage.setItem('my_real_estate_list', JSON.stringify(houses));
-
-            renderListings(houses);
-            closeModal();
-
-            // Maydonlarni tozalash
-            document.getElementById('title').value = '';
-            document.getElementById('price').value = '';
-            document.getElementById('location').value = '';
-            document.getElementById('phone').value = '';
-            document.getElementById('imgUrl').value = '';
-        }
-
-        // Yuklanganda ekranga chiqarish
-        renderListings(houses);
-    </script>
+      }
+    });
+  </script>
 </body>
-</html>
-     
+</html
