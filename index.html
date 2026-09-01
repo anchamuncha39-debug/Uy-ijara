@@ -93,7 +93,7 @@
       </select>
 
       <div id="vip-payment-info" class="hidden" style="background: #fff9c4; padding: 10px; border-radius: 8px;">
-        <p style="margin:0; font-size:12px;">Karta: <b>4790 9200 1820 7154</b> (Eski egalari)</p>
+        <p style="margin:0; font-size:12px;">Karta: <b>4790 9200 1820 7154 </b> (Eski egalari)</p>
         <p style="margin:5px 0 0 0; font-size:11px; color:#d32f2f;">To'lov qilgach, chek rasmini telegram administratsiyaga yuborasiz.</p>
       </div>
 
@@ -102,21 +102,32 @@
   </div>
 
   <script>
-    // FIREBASE KALITLARINGIZNI SHU YERGA QO'YING
+    // 1. ADMIN TELEGRAM ID RAQAMINGIZNI SHU YERGA YOZING:
+    const ADMIN_TELEGRAM_ID = 5703210590; 
+
+    // Firebase sozlamalari (sintaksis xatoligi tuzatildi)
     const firebaseConfig = {
       apiKey: "AIzaSyClO-_iXU-eJWOHB3bzcuAdn7UqHk71oUI",
-  authDomain: "surhondaryo-uy-ijara.firebaseapp.com",
-  projectId: "surhondaryo-uy-ijara",
-  storageBucket: "surhondaryo-uy-ijara.firebasestorage.app",
-  messagingSenderId: "551178863813",
-  appId: "1:551178863813:web:16daab123488a8d4325cac",
-  measurementId: "G-4SJC1H62SK"
-};
+      authDomain: "surhondaryo-uy-ijara.firebaseapp.com",
+      projectId: "surhondaryo-uy-ijara",
+      storageBucket: "surhondaryo-uy-ijara.firebasestorage.app",
+      messagingSenderId: "551178863813",
+      appId: "1:5511788633:web:16daab123488a8d4325cac",
+      measurementId: "G-4SJC1H62SK"
+    } };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const tg = window.Telegram?.WebApp;
+    const currentUserId = tg?.initDataUnsafe?.user?.id;
     if(tg) tg.expand();
+
+    // 2. TAQIQLANGAN VA ALOQASIZ SO'ZLAR FILTRI
+    const forbiddenWords = [
+      'qizlar', 'sex', 'seks', 'porn', 'onlain', 'masaj', 
+      'qutoq', 'jalab', 'moshena', 'obuna buling', 'obuna',
+      'mashina', 'avto', 'telefon', 'nokia', 'iphone', 'damas', 'gentra'
+    ];
 
     function showTab(tab) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -136,7 +147,7 @@
       document.getElementById('vip-payment-info').classList.toggle('hidden', !isVip);
     }
 
-    // E'lonni bazaga yuborish
+    // 3. E'LONNI FILTRLAB VA BIR ZUMDA YUBORISH
     function submitListing() {
       const title = document.getElementById('title').value;
       const region = document.getElementById('region').value;
@@ -147,6 +158,15 @@
       const img = document.getElementById('img-url').value || 'https://via.placeholder.com/300x180?text=Rasm+Yo%27q';
       const isVip = document.getElementById('is-vip').value === 'true';
 
+      // Taqiqlangan so'zlarga tekshirish
+      const textToCheck = (title + " " + desc).toLowerCase();
+      const hasForbidden = forbiddenWords.some(word => textToCheck.includes(word));
+
+      if (hasForbidden) {
+        alert("Xatolik: E'lon matnida taqiqlangan yoki aloqasiz so'zlar bor!");
+        return;
+      }
+
       if (!title || !price || !phone) {
         alert("Iltimos, asosiy maydonlarni to'ldiring!");
         return;
@@ -155,16 +175,21 @@
       const newRef = db.ref('listings').push();
       newRef.set({
         title, region, type, price, phone, desc, img, isVip,
-        status: 'pending',
+        status: 'approved', // Moderatsiyasiz darhol ilovaga chiqadi
         createdAt: Date.now(),
-        userId: tg?.initDataUnsafe?.user?.id || 'anonim'
+        userId: currentUserId || 'anonim'
       }).then(() => {
-        alert("E'loningiz moderatsiyaga yuborildi! Administrator tasdiqlagach kanalda hamda ilovada ko'rinadi.");
+        alert("E'loningiz muvaffaqiyatli joylandi!");
+        document.getElementById('title').value = '';
+        document.getElementById('price').value = '';
+        document.getElementById('phone').value = '';
+        document.getElementById('desc').value = '';
+        document.getElementById('img-url').value = '';
         showTab('list');
       });
     }
 
-    // E'lonlarni yuklab ko'rsatish
+    // 4. E'LONLARNI YUKLASH VA ADMIN UCHUN O'CHIRISH TUGMASI
     function loadListings(regionFilter = 'all', typeFilter = 'all') {
       db.ref('listings').on('value', snapshot => {
         const container = document.getElementById('listings-container');
@@ -172,16 +197,22 @@
         const data = snapshot.val();
 
         if (!data) {
-          container.innerHTML = '<p style="text-align:center;">Hozircha e'lonlar yo'q.</p>';
+          container.innerHTML = '<p style="text-align:center;">Hozircha e\'lonlar yo\'q.</p>';
           return;
         }
 
         Object.keys(data).reverse().forEach(key => {
           const item = data[key];
-          // Faqat tasdiqlangan (approved) e'lonlarni ko'rsatamiz
+
           if (item.status === 'approved') {
             if (regionFilter !== 'all' && item.region !== regionFilter) return;
             if (typeFilter !== 'all' && item.type !== typeFilter) return;
+
+            // Admin o'chirish tugmasi (faqat sizning ID raqamingizga ko'rinadi)
+            let deleteBtn = '';
+            if (currentUserId && Number(currentUserId) === ADMIN_TELEGRAM_ID) {
+              deleteBtn = `<button onclick="deleteListing('${key}')" style="background:#e53935; margin-top:8px;">🗑️ E'lonni o'chirish (Admin)</button>`;
+            }
 
             const card = document.createElement('div');
             card.className = 'card';
@@ -193,11 +224,21 @@
               <p style="margin:4px 0; color:#2e7d32; font-weight:bold; font-size:16px;">💵 ${item.price} $</p>
               <p style="font-size:13px; color:#444;">${item.desc}</p>
               <a href="tel:${item.phone}"><button style="background:#4caf50;">📞 Qo'ng'iroq qilish</button></a>
+              ${deleteBtn}
             `;
             container.appendChild(card);
           }
         });
       });
+    }
+
+    // 5. ADMIN UCHUN E'LONNI BAZADAN O'CHIRISH
+    function deleteListing(key) {
+      if (confirm("Haqiqatan ham ushbu e'lonni o'chirmoqchimisiz?")) {
+        db.ref('listings/' + key).remove()
+          .then(() => alert("E'lon o'chirildi!"))
+          .catch((err) => alert("Xatolik: " + err.message));
+      }
     }
 
     function applyFilter() {
